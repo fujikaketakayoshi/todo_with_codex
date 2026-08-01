@@ -6,7 +6,6 @@
 ## Technology
 - PHP 8.3
 - SQLite
-- Bootstrap 5
 - JavaScript（必要最低限）
 
 ## Coding Style
@@ -23,10 +22,11 @@
 - SQLインジェクション対策を行う
 - SQLiteのみ使用
 
-## UI
-- レスポンシブ対応
-- シンプルなデザイン
-- Bootstrapコンポーネントを優先
+## Frontend
+- Modern web best practicesを優先する
+- 必要に応じてCSSやWeb標準APIを活用する
+- Bootstrap 5の利用は必須ではない
+- 依存ライブラリは必要性を検討して追加する
 
 ## Rules
 - 外部ライブラリは必要最小限
@@ -34,13 +34,11 @@
 - セキュリティを考慮する# AGENTS.md
 
 ## Architecture
-
 - ロジックはできるだけ関数に分ける
 - HTMLとPHPを極端に混在させない
 - DBアクセスは共通関数にまとめる
 
 ## Before Editing
-
 - 既存コードを尊重する
 - 必要以上のリファクタリングは行わない
 - 動作に影響する変更は理由を説明する
