@@ -23,12 +23,15 @@ function renderHeader(string $title = 'TODO アプリ'): void
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <main class="container py-5">
-        <header class="mb-4">
-            <p class="eyebrow mb-1">MY TASKS</p>
-            <h1 class="h2 mb-2"><?= e($title) ?></h1>
-            <p class="subtitle mb-0">やることを整理して、気持ちよく片付けよう。</p>
+<body class="app-body">
+    <main class="container py-4 py-md-5">
+        <header class="app-header mb-4 mb-md-5">
+            <div>
+                <p class="eyebrow mb-2">MY TASKS</p>
+                <h1 class="display-6 fw-bold mb-2"><?= e($title) ?></h1>
+                <p class="subtitle mb-0">今日のやることを、ひとつずつ片付けよう。</p>
+            </div>
+            <div class="header-mark" aria-hidden="true">✓</div>
         </header>
     <?php
 }
