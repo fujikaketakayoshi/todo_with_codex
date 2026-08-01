@@ -1,7 +1,14 @@
 <?php
 declare(strict_types=1);
 
-const DATABASE_PATH = __DIR__ . '/../data/todos.sqlite';
+function databasePath(): string
+{
+    $testDatabasePath = getenv('TODO_DATABASE_PATH');
+
+    return $testDatabasePath === false || $testDatabasePath === ''
+        ? __DIR__ . '/../data/todos.sqlite'
+        : $testDatabasePath;
+}
 
 function todoDatabase(): PDO
 {
@@ -10,12 +17,13 @@ function todoDatabase(): PDO
         return $pdo;
     }
 
-    $dataDirectory = dirname(DATABASE_PATH);
+    $databasePath = databasePath();
+    $dataDirectory = dirname($databasePath);
     if (!is_dir($dataDirectory)) {
         mkdir($dataDirectory, 0775, true);
     }
 
-    $pdo = new PDO('sqlite:' . DATABASE_PATH);
+    $pdo = new PDO('sqlite:' . $databasePath);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('PRAGMA foreign_keys = ON');
     $pdo->exec(
