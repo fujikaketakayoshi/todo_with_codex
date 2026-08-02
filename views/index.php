@@ -50,7 +50,7 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <button class="rounded-xl bg-emerald-800 px-5 py-3 font-bold text-white transition hover:bg-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" type="submit"><?= $editingTodo === null ? '追加' : '保存' ?></button>
+                    <button class="self-start rounded-xl bg-emerald-800 px-5 py-3 font-bold text-white transition hover:bg-emerald-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" type="submit"><?= $editingTodo === null ? '追加' : '保存' ?></button>
                 </div>
             </form>
         </section>
@@ -124,9 +124,12 @@
                 <input type="hidden" name="return_category" value="<?= e($returnCategory) ?>">
                 <input type="hidden" name="action" value="<?= $editingCategory === null ? 'add_category' : 'update_category' ?>">
                 <?php if ($editingCategory !== null): ?><input type="hidden" name="id" value="<?= (int) $editingCategory['id'] ?>"><?php endif; ?>
-                <label class="sr-only" for="category_name">カテゴリ名</label>
-                <input class="min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-2 focus:outline-emerald-200" id="category_name" name="name" type="text" maxlength="40" placeholder="例：仕事" value="<?= $editingCategory === null ? '' : e((string) $editingCategory['name']) ?>" required>
-                <button class="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-700" type="submit"><?= $editingCategory === null ? '作成' : '保存' ?></button>
+                <div>
+                    <label class="sr-only" for="category_name">カテゴリ名</label>
+                    <input class="min-w-0 w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-2 focus:outline-emerald-200" id="category_name" name="name" type="text" placeholder="例：仕事" value="<?= $editingCategory === null ? '' : e((string) $editingCategory['name']) ?>" aria-describedby="category-name-hint" required>
+                    <small class="ml-1 mt-1.5 block text-xs font-medium text-slate-500" id="category-name-hint">最大30文字</small>
+                </div>
+                <button class="self-start rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-700" type="submit"><?= $editingCategory === null ? '作成' : '保存' ?></button>
                 <?php if ($editingCategory !== null): ?><a class="col-span-2 pt-1 text-xs font-bold text-slate-500 underline hover:text-slate-800" href="index.php">キャンセル</a><?php endif; ?>
             </form>
             <ul class="mt-5 grid gap-1">

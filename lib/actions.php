@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 const TODO_TITLE_MAXIMUM_LENGTH = 100;
+const CATEGORY_NAME_MAXIMUM_LENGTH = 30;
 
 function requireExistingTodo(): int
 {
@@ -46,7 +47,7 @@ function handleCategoryAction(string $action): never
     $parameters = returnFilterParameters();
     if ($action === 'add_category') {
         try {
-            createCategory(requiredText('name', 'カテゴリ名', 40));
+            createCategory(requiredText('name', 'カテゴリ名', CATEGORY_NAME_MAXIMUM_LENGTH));
             redirect('カテゴリを作成しました。', $parameters);
         } catch (PDOException $exception) {
             redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
@@ -55,7 +56,7 @@ function handleCategoryAction(string $action): never
     $id = requireExistingCategory();
     if ($action === 'update_category') {
         try {
-            updateCategory($id, requiredText('name', 'カテゴリ名', 40));
+            updateCategory($id, requiredText('name', 'カテゴリ名', CATEGORY_NAME_MAXIMUM_LENGTH));
             redirect('カテゴリを編集しました。', $parameters);
         } catch (PDOException $exception) {
             redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
