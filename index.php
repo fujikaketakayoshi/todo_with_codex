@@ -24,7 +24,7 @@ $todoSummary = [
     'remaining' => count(array_filter($allTodos, static fn(array $todo): bool => (int) $todo['is_completed'] === 0)),
     'completed' => count(array_filter($allTodos, static fn(array $todo): bool => (int) $todo['is_completed'] === 1)),
 ];
-$message = $_GET['message'] ?? '';
+$message = pullFlashMessage();
 $editingTodo = ($id = requestPositiveInt('edit', $_GET)) === null ? null : findTodo($id);
 $editingCategory = ($id = requestPositiveInt('edit_category', $_GET)) === null ? null : findCategory($id);
 $returnCategory = $showUncategorized ? 'none' : ($selectedCategory === null ? '' : (string) $selectedCategory);

@@ -12,10 +12,18 @@ function initializeSession(): void
 function redirect(string $message = '', array $parameters = []): never
 {
     if ($message !== '') {
-        $parameters['message'] = $message;
+        $_SESSION['flash_message'] = $message;
     }
     header('Location: index.php' . ($parameters === [] ? '' : '?' . http_build_query($parameters)));
     exit;
+}
+
+function pullFlashMessage(): ?string
+{
+    $message = $_SESSION['flash_message'] ?? null;
+    unset($_SESSION['flash_message']);
+
+    return is_string($message) ? $message : null;
 }
 
 /** @return array{category?: string} */

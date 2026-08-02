@@ -9,3 +9,4 @@ if (is_file($testDatabasePath)) {
 putenv('TODO_DATABASE_PATH=' . $testDatabasePath);
 
 require_once __DIR__ . '/../lib/model.php';
+require_once __DIR__ . '/../lib/controller.php';
