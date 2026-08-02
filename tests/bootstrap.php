@@ -10,3 +10,4 @@ putenv('TODO_DATABASE_PATH=' . $testDatabasePath);
 
 require_once __DIR__ . '/../lib/model.php';
 require_once __DIR__ . '/../lib/controller.php';
+require_once __DIR__ . '/../lib/actions.php';

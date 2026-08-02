@@ -62,10 +62,15 @@ function requiredText(string $key, string $label, int $maximumLength): string
     if ($text === '') {
         redirect($label . 'を入力してください。');
     }
-    if (mb_strlen($text) > $maximumLength) {
+    if (!isWithinMaximumLength($text, $maximumLength)) {
         redirect($label . 'は' . $maximumLength . '文字以内で入力してください。');
     }
     return $text;
+}
+
+function isWithinMaximumLength(string $text, int $maximumLength): bool
+{
+    return mb_strlen($text) <= $maximumLength;
 }
 
 function requestCategoryId(): ?int

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+const TODO_TITLE_MAXIMUM_LENGTH = 100;
+
 function requireExistingTodo(): int
 {
     $id = requestPositiveInt('id', $_POST);
@@ -23,12 +25,12 @@ function handleTodoAction(string $action): never
 {
     $parameters = returnFilterParameters();
     if ($action === 'add_todo') {
-        createTodo(requiredText('title', 'TODO', 120), requestCategoryId());
+        createTodo(requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestCategoryId());
         redirect('TODOを追加しました。', $parameters);
     }
     $id = requireExistingTodo();
     if ($action === 'update_todo') {
-        updateTodo($id, requiredText('title', 'TODO', 120), requestCategoryId());
+        updateTodo($id, requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestCategoryId());
         redirect('TODOを編集しました。', $parameters);
     }
     if ($action === 'toggle_todo') {

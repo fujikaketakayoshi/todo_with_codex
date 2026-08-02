@@ -37,7 +37,7 @@
                 <?php endif; ?>
                 <div class="composer-fields">
                     <label class="screen-reader-only" for="title">TODO</label>
-                    <input class="field field-title" id="title" name="title" type="text" maxlength="120" placeholder="例：企画書の下書きを作成" value="<?= $editingTodo === null ? '' : e((string) $editingTodo['title']) ?>" required autofocus>
+                    <input class="field field-title" id="title" name="title" type="text" maxlength="100" placeholder="例：企画書の下書きを作成" value="<?= $editingTodo === null ? '' : e((string) $editingTodo['title']) ?>" required autofocus>
                     <label class="screen-reader-only" for="category_id">カテゴリ</label>
                     <select class="field field-category" id="category_id" name="category_id">
                         <option value="">カテゴリなし</option>
