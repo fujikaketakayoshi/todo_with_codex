@@ -5,3 +5,4 @@
 /skills-lock.json
 /.phpunit.result.cache
 /vendor/
+/node_modules/

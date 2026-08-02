@@ -22,15 +22,15 @@ function renderHeader(string $title = 'TODO アプリ'): void
     <title><?= e($title) ?></title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="app-body">
-    <main class="site-shell">
-        <header class="app-header">
+<body class="min-w-80 bg-stone-50 text-slate-800 antialiased">
+    <main class="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
+        <header class="mb-8 flex items-center justify-between gap-6 sm:mb-10">
             <div>
-                <p class="eyebrow">MY TASKS</p>
-                <h1><?= e($title) ?></h1>
-                <p class="subtitle">今日のやることを、ひとつずつ片付けよう。</p>
+                <p class="mb-2 text-xs font-extrabold tracking-[0.16em] text-emerald-700">MY TASKS</p>
+                <h1 class="font-serif text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"><?= e($title) ?></h1>
+                <p class="mt-2 text-sm text-slate-500 sm:text-base">今日のやることを、ひとつずつ片付けよう。</p>
             </div>
-            <div class="header-mark" aria-hidden="true">✓</div>
+            <div class="grid size-12 rotate-[-10deg] place-items-center rounded-full rounded-bl-md bg-emerald-800 text-xl font-extrabold text-white shadow-[5px_5px_0_#fed7aa] sm:size-14" aria-hidden="true">✓</div>
         </header>
     <?php
 }

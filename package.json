@@ -1,0 +1,23 @@
+{
+  "name": "todo_with_codex",
+  "version": "1.0.0",
+  "description": "外部ライブラリ不要のシンプルな TODO アプリです。TODO の追加・編集・完了状態の切り替え・削除、カテゴリの作成・編集・削除とTODOへの割り当て、カテゴリ別（未分類を含む）の絞り込み表示に対応しています。SQLite データベースは初回アクセス時に `data/todos.sqlite` として自動作成されます。",
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./src/input.css -o ./style.css --minify",
+    "watch:css": "npx @tailwindcss/cli -i ./src/input.css -o ./style.css --watch",
+    "test": "vendor/bin/phpunit --testdox"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujikaketakayoshi/todo_with_codex.git"
+  },
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/fujikaketakayoshi/todo_with_codex/issues"
+  },
+  "homepage": "https://github.com/fujikaketakayoshi/todo_with_codex#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

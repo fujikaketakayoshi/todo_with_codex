@@ -4,6 +4,21 @@
 
 データベースへのアクセス処理は `lib/model.php`、リダイレクトやCSRF検証などの処理は `lib/controller.php`、TODO／カテゴリの作成・編集・削除の処理は `lib/actions.php`、共通HTMLは `lib/view.php` にまとめています。`index.php` はリクエストを受け付け、表示条件を決定して画面を描画します。
 
+## CSSのビルド
+
+画面はTailwind CSSで構成しています。初回のみNode.js依存をインストールし、CSSを生成してください。
+
+```bash
+npm install
+npm run build:css
+```
+
+開発中にCSSを自動生成するには、次を実行します。
+
+```bash
+npm run watch:css
+```
+
 ## 起動方法
 
 PHP 8.3 と SQLite 拡張が有効な環境で、プロジェクト直下から次を実行します。

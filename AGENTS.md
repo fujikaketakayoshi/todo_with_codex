@@ -7,6 +7,7 @@
 - PHP 8.3
 - SQLite
 - JavaScript（必要最低限）
+- TailWind
 
 ## Coding Style
 - PSR-12準拠
