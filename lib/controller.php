@@ -9,21 +9,37 @@ function initializeSession(): void
     }
 }
 
-function redirect(string $message = '', array $parameters = []): never
+function redirect(string $message = '', array $parameters = [], string $flashType = 'success'): never
 {
     if ($message !== '') {
-        $_SESSION['flash_message'] = $message;
+        storeFlashMessage($message, $flashType);
     }
     header('Location: index.php' . ($parameters === [] ? '' : '?' . http_build_query($parameters)));
     exit;
 }
 
-function pullFlashMessage(): ?string
+function storeFlashMessage(string $message, string $type = 'success'): void
 {
-    $message = $_SESSION['flash_message'] ?? null;
+    $_SESSION['flash_message'] = [
+        'message' => $message,
+        'type' => $type === 'error' ? 'error' : 'success',
+    ];
+}
+
+/** @return array{message: string, type: 'error'|'success'}|null */
+function pullFlashMessage(): ?array
+{
+    $flashMessage = $_SESSION['flash_message'] ?? null;
     unset($_SESSION['flash_message']);
 
-    return is_string($message) ? $message : null;
+    if (!is_array($flashMessage) || !is_string($flashMessage['message'] ?? null)) {
+        return null;
+    }
+
+    return [
+        'message' => $flashMessage['message'],
+        'type' => ($flashMessage['type'] ?? null) === 'error' ? 'error' : 'success',
+    ];
 }
 
 /** @return array{category?: string} */
@@ -60,10 +76,10 @@ function requiredText(string $key, string $label, int $maximumLength): string
 {
     $text = trim((string) ($_POST[$key] ?? ''));
     if ($text === '') {
-        redirect($label . 'を入力してください。');
+        redirect($label . 'を入力してください。', [], 'error');
     }
     if (!isWithinMaximumLength($text, $maximumLength)) {
-        redirect($label . 'は' . $maximumLength . '文字以内で入力してください。');
+        redirect($label . 'は' . $maximumLength . '文字以内で入力してください。', [], 'error');
     }
     return $text;
 }
@@ -81,7 +97,7 @@ function requestCategoryId(): ?int
     }
     $id = requestPositiveInt('category_id', $_POST);
     if ($id === null || findCategory($id) === null) {
-        redirect('選択したカテゴリが見つかりません。');
+        redirect('選択したカテゴリが見つかりません。', [], 'error');
     }
     return $id;
 }

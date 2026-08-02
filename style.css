@@ -177,6 +177,13 @@ body.app-body {
   font-size: 1rem;
 }
 
+.title-field-group small {
+  display: block;
+  margin: 6px 2px 0;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
 .field:focus-visible,
 .button:focus-visible,
 .complete-button:focus-visible,
@@ -260,6 +267,12 @@ body.app-body {
   border-radius: 12px;
   font-size: .9rem;
   font-weight: 700;
+}
+
+.notice-error {
+  color: #8d2d28;
+  background: #fbe5e2;
+  border: 1px solid #f0bdb8;
 }
 
 .task-count {

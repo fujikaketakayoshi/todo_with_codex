@@ -14,9 +14,22 @@ final class FlashMessageFeatureTest extends TestCase
 
     public function testPullsAFlashMessageOnlyOnce(): void
     {
-        $_SESSION['flash_message'] = 'TODOを追加しました。';
+        storeFlashMessage('TODOを追加しました。');
 
-        self::assertSame('TODOを追加しました。', pullFlashMessage());
+        self::assertSame(
+            ['message' => 'TODOを追加しました。', 'type' => 'success'],
+            pullFlashMessage()
+        );
         self::assertNull(pullFlashMessage());
+    }
+
+    public function testStoresAnErrorFlashMessage(): void
+    {
+        storeFlashMessage('TODOは100文字以内で入力してください。', 'error');
+
+        self::assertSame(
+            ['message' => 'TODOは100文字以内で入力してください。', 'type' => 'error'],
+            pullFlashMessage()
+        );
     }
 }

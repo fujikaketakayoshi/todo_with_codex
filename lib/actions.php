@@ -7,7 +7,7 @@ function requireExistingTodo(): int
 {
     $id = requestPositiveInt('id', $_POST);
     if ($id === null || findTodo($id) === null) {
-        redirect('対象のTODOが見つかりません。', returnFilterParameters());
+        redirect('対象のTODOが見つかりません。', returnFilterParameters(), 'error');
     }
     return $id;
 }
@@ -16,7 +16,7 @@ function requireExistingCategory(): int
 {
     $id = requestPositiveInt('id', $_POST);
     if ($id === null || findCategory($id) === null) {
-        redirect('対象のカテゴリが見つかりません。', returnFilterParameters());
+        redirect('対象のカテゴリが見つかりません。', returnFilterParameters(), 'error');
     }
     return $id;
 }
@@ -49,7 +49,7 @@ function handleCategoryAction(string $action): never
             createCategory(requiredText('name', 'カテゴリ名', 40));
             redirect('カテゴリを作成しました。', $parameters);
         } catch (PDOException $exception) {
-            redirect('同じ名前のカテゴリがすでにあります。', $parameters);
+            redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
         }
     }
     $id = requireExistingCategory();
@@ -58,7 +58,7 @@ function handleCategoryAction(string $action): never
             updateCategory($id, requiredText('name', 'カテゴリ名', 40));
             redirect('カテゴリを編集しました。', $parameters);
         } catch (PDOException $exception) {
-            redirect('同じ名前のカテゴリがすでにあります。', $parameters);
+            redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
         }
     }
     deleteCategory($id);

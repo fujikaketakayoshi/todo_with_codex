@@ -37,7 +37,10 @@
                 <?php endif; ?>
                 <div class="composer-fields">
                     <label class="screen-reader-only" for="title">TODO</label>
-                    <input class="field field-title" id="title" name="title" type="text" maxlength="100" placeholder="例：企画書の下書きを作成" value="<?= $editingTodo === null ? '' : e((string) $editingTodo['title']) ?>" required autofocus>
+                    <div class="title-field-group">
+                        <input class="field field-title" id="title" name="title" type="text" placeholder="例：企画書の下書きを作成" value="<?= $editingTodo === null ? '' : e((string) $editingTodo['title']) ?>" aria-describedby="title-hint" required autofocus>
+                        <small id="title-hint">最大100文字</small>
+                    </div>
                     <label class="screen-reader-only" for="category_id">カテゴリ</label>
                     <select class="field field-category" id="category_id" name="category_id">
                         <option value="">カテゴリなし</option>
@@ -52,8 +55,10 @@
             </form>
         </section>
 
-        <?php if (is_string($message) && $message !== ''): ?>
-            <p class="notice" role="status"><?= e($message) ?></p>
+        <?php if ($message !== null): ?>
+            <p class="notice notice-<?= e($message['type']) ?>" role="<?= $message['type'] === 'error' ? 'alert' : 'status' ?>">
+                <?= e($message['message']) ?>
+            </p>
         <?php endif; ?>
 
         <section class="panel task-panel" aria-label="TODO一覧">
