@@ -13,6 +13,7 @@ function databasePath(): string
 function todoDatabase(): PDO
 {
     static $pdo = null;
+
     if ($pdo instanceof PDO) {
         return $pdo;
     }
@@ -26,13 +27,54 @@ function todoDatabase(): PDO
     $pdo = new PDO('sqlite:' . $databasePath);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('PRAGMA foreign_keys = ON');
+
+    migrateCategoriesToTags($pdo);
+    createTagTable($pdo);
+    createTodoTable($pdo);
+    migrateTodoCategoryToTags($pdo);
+    createTodoTagTable($pdo);
+
+    return $pdo;
+}
+
+function tableExists(PDO $pdo, string $tableName): bool
+{
+    $statement = $pdo->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :name");
+    $statement->execute([':name' => $tableName]);
+
+    return $statement->fetchColumn() !== false;
+}
+
+function tableHasColumn(PDO $pdo, string $tableName, string $columnName): bool
+{
+    $columns = $pdo->query('PRAGMA table_info(' . $tableName . ')')->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_filter(
+        $columns,
+        static fn(array $column): bool => $column['name'] === $columnName
+    ) !== [];
+}
+
+function migrateCategoriesToTags(PDO $pdo): void
+{
+    if (tableExists($pdo, 'categories') && !tableExists($pdo, 'tags')) {
+        $pdo->exec('ALTER TABLE categories RENAME TO tags');
+    }
+}
+
+function createTagTable(PDO $pdo): void
+{
     $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS categories (
+        'CREATE TABLE IF NOT EXISTS tags (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )'
     );
+}
+
+function createTodoTable(PDO $pdo): void
+{
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS todos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,54 +83,153 @@ function todoDatabase(): PDO
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )'
     );
-
-    $columns = $pdo->query('PRAGMA table_info(todos)')->fetchAll(PDO::FETCH_ASSOC);
-    $hasCategoryId = array_filter($columns, static fn(array $column): bool => $column['name'] === 'category_id') !== [];
-    if (!$hasCategoryId) {
-        $pdo->exec('ALTER TABLE todos ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL');
-    }
-
-    return $pdo;
 }
 
-/** @return list<array{id: int, title: string, is_completed: int, category_id: ?int, category_name: ?string, created_at: string}> */
-function findAllTodos(?int $categoryId = null, bool $onlyUncategorized = false): array
+function createTodoTagTable(PDO $pdo): void
 {
-    $sql = 'SELECT todos.id, todos.title, todos.is_completed, todos.category_id, categories.name AS category_name, todos.created_at
-            FROM todos LEFT JOIN categories ON categories.id = todos.category_id';
-    if ($categoryId !== null) {
-        $sql .= ' WHERE todos.category_id = :category_id';
-    } elseif ($onlyUncategorized) {
-        $sql .= ' WHERE todos.category_id IS NULL';
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS todo_tags (
+            todo_id INTEGER NOT NULL,
+            tag_id INTEGER NOT NULL,
+            PRIMARY KEY (todo_id, tag_id),
+            FOREIGN KEY (todo_id) REFERENCES todos(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        )'
+    );
+}
+
+function migrateTodoCategoryToTags(PDO $pdo): void
+{
+    if (!tableHasColumn($pdo, 'todos', 'category_id')) {
+        return;
     }
-    $sql .= ' ORDER BY todos.is_completed ASC, todos.id DESC';
+
+    $pdo->beginTransaction();
+
+    try {
+        $pdo->exec('ALTER TABLE todos RENAME TO todos_legacy');
+        createTodoTable($pdo);
+        $pdo->exec(
+            'INSERT INTO todos (id, title, is_completed, created_at)
+             SELECT id, title, is_completed, created_at FROM todos_legacy'
+        );
+        createTodoTagTable($pdo);
+        $pdo->exec(
+            'INSERT OR IGNORE INTO todo_tags (todo_id, tag_id)
+             SELECT id, category_id FROM todos_legacy WHERE category_id IS NOT NULL'
+        );
+        $pdo->exec('DROP TABLE todos_legacy');
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+/** @return list<array{id: int, title: string, is_completed: int, tag_names: ?string, created_at: string}> */
+function findAllTodos(?int $tagId = null, bool $onlyUntagged = false): array
+{
+    $sql = 'SELECT todos.id, todos.title, todos.is_completed,
+                   GROUP_CONCAT(tags.name, \' • \') AS tag_names, todos.created_at
+            FROM todos
+            LEFT JOIN todo_tags ON todo_tags.todo_id = todos.id
+            LEFT JOIN tags ON tags.id = todo_tags.tag_id';
+
+    if ($tagId !== null) {
+        $sql .= ' WHERE EXISTS (
+            SELECT 1 FROM todo_tags filtered_tags
+            WHERE filtered_tags.todo_id = todos.id AND filtered_tags.tag_id = :tag_id
+        )';
+    } elseif ($onlyUntagged) {
+        $sql .= ' WHERE NOT EXISTS (
+            SELECT 1 FROM todo_tags assigned_tags WHERE assigned_tags.todo_id = todos.id
+        )';
+    }
+
+    $sql .= ' GROUP BY todos.id ORDER BY todos.is_completed ASC, todos.id DESC';
     $statement = todoDatabase()->prepare($sql);
-    $statement->execute($categoryId === null ? [] : [':category_id' => $categoryId]);
+    $statement->execute($tagId === null ? [] : [':tag_id' => $tagId]);
+
     return $statement->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/** @return array{id: int, title: string, is_completed: int, category_id: ?int, category_name: ?string, created_at: string}|null */
+/** @return array{id: int, title: string, is_completed: int, tag_names: ?string, tag_ids: list<int>, created_at: string}|null */
 function findTodo(int $id): ?array
 {
     $statement = todoDatabase()->prepare(
-        'SELECT todos.id, todos.title, todos.is_completed, todos.category_id, categories.name AS category_name, todos.created_at
-         FROM todos LEFT JOIN categories ON categories.id = todos.category_id WHERE todos.id = :id'
+        'SELECT todos.id, todos.title, todos.is_completed,
+                GROUP_CONCAT(tags.name, \' • \') AS tag_names, todos.created_at
+         FROM todos
+         LEFT JOIN todo_tags ON todo_tags.todo_id = todos.id
+         LEFT JOIN tags ON tags.id = todo_tags.tag_id
+         WHERE todos.id = :id
+         GROUP BY todos.id'
     );
     $statement->execute([':id' => $id]);
     $todo = $statement->fetch(PDO::FETCH_ASSOC);
-    return $todo === false ? null : $todo;
+
+    if ($todo === false) {
+        return null;
+    }
+
+    $todo['tag_ids'] = findTagIdsForTodo($id);
+
+    return $todo;
 }
 
-function createTodo(string $title, ?int $categoryId): void
+/** @return list<int> */
+function findTagIdsForTodo(int $todoId): array
 {
-    $statement = todoDatabase()->prepare('INSERT INTO todos (title, category_id) VALUES (:title, :category_id)');
-    $statement->execute([':title' => $title, ':category_id' => $categoryId]);
+    $statement = todoDatabase()->prepare('SELECT tag_id FROM todo_tags WHERE todo_id = :todo_id');
+    $statement->execute([':todo_id' => $todoId]);
+
+    return array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
 }
 
-function updateTodo(int $id, string $title, ?int $categoryId): void
+/** @param list<int> $tagIds */
+function createTodo(string $title, array $tagIds): void
 {
-    $statement = todoDatabase()->prepare('UPDATE todos SET title = :title, category_id = :category_id WHERE id = :id');
-    $statement->execute([':id' => $id, ':title' => $title, ':category_id' => $categoryId]);
+    $pdo = todoDatabase();
+    $pdo->beginTransaction();
+
+    try {
+        $statement = $pdo->prepare('INSERT INTO todos (title) VALUES (:title)');
+        $statement->execute([':title' => $title]);
+        replaceTodoTags($pdo, (int) $pdo->lastInsertId(), $tagIds);
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+/** @param list<int> $tagIds */
+function updateTodo(int $id, string $title, array $tagIds): void
+{
+    $pdo = todoDatabase();
+    $pdo->beginTransaction();
+
+    try {
+        $statement = $pdo->prepare('UPDATE todos SET title = :title WHERE id = :id');
+        $statement->execute([':id' => $id, ':title' => $title]);
+        replaceTodoTags($pdo, $id, $tagIds);
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+/** @param list<int> $tagIds */
+function replaceTodoTags(PDO $pdo, int $todoId, array $tagIds): void
+{
+    $deleteStatement = $pdo->prepare('DELETE FROM todo_tags WHERE todo_id = :todo_id');
+    $deleteStatement->execute([':todo_id' => $todoId]);
+
+    $insertStatement = $pdo->prepare('INSERT INTO todo_tags (todo_id, tag_id) VALUES (:todo_id, :tag_id)');
+    foreach (array_unique($tagIds) as $tagId) {
+        $insertStatement->execute([':todo_id' => $todoId, ':tag_id' => $tagId]);
+    }
 }
 
 function toggleTodo(int $id): void
@@ -104,34 +245,35 @@ function deleteTodo(int $id): void
 }
 
 /** @return list<array{id: int, name: string, created_at: string}> */
-function findAllCategories(): array
+function findAllTags(): array
 {
-    return todoDatabase()->query('SELECT id, name, created_at FROM categories ORDER BY name COLLATE NOCASE ASC')->fetchAll(PDO::FETCH_ASSOC);
+    return todoDatabase()->query('SELECT id, name, created_at FROM tags ORDER BY name COLLATE NOCASE ASC')->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /** @return array{id: int, name: string, created_at: string}|null */
-function findCategory(int $id): ?array
+function findTag(int $id): ?array
 {
-    $statement = todoDatabase()->prepare('SELECT id, name, created_at FROM categories WHERE id = :id');
+    $statement = todoDatabase()->prepare('SELECT id, name, created_at FROM tags WHERE id = :id');
     $statement->execute([':id' => $id]);
-    $category = $statement->fetch(PDO::FETCH_ASSOC);
-    return $category === false ? null : $category;
+    $tag = $statement->fetch(PDO::FETCH_ASSOC);
+
+    return $tag === false ? null : $tag;
 }
 
-function createCategory(string $name): void
+function createTag(string $name): void
 {
-    $statement = todoDatabase()->prepare('INSERT INTO categories (name) VALUES (:name)');
+    $statement = todoDatabase()->prepare('INSERT INTO tags (name) VALUES (:name)');
     $statement->execute([':name' => $name]);
 }
 
-function updateCategory(int $id, string $name): void
+function updateTag(int $id, string $name): void
 {
-    $statement = todoDatabase()->prepare('UPDATE categories SET name = :name WHERE id = :id');
+    $statement = todoDatabase()->prepare('UPDATE tags SET name = :name WHERE id = :id');
     $statement->execute([':id' => $id, ':name' => $name]);
 }
 
-function deleteCategory(int $id): void
+function deleteTag(int $id): void
 {
-    $statement = todoDatabase()->prepare('DELETE FROM categories WHERE id = :id');
+    $statement = todoDatabase()->prepare('DELETE FROM tags WHERE id = :id');
     $statement->execute([':id' => $id]);
 }

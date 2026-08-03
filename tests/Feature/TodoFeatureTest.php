@@ -10,45 +10,46 @@ final class TodoFeatureTest extends TestCase
         parent::setUp();
 
         todoDatabase()->exec('DELETE FROM todos');
-        todoDatabase()->exec('DELETE FROM categories');
+        todoDatabase()->exec('DELETE FROM tags');
     }
 
     public function testCreatesAndRetrievesATodo(): void
     {
-        createCategory('仕事');
-        $category = findAllCategories()[0];
+        createTag('仕事');
+        $tag = findAllTags()[0];
 
-        createTodo('見積書を作成する', (int) $category['id']);
+        createTodo('見積書を作成する', [(int) $tag['id']]);
 
         $todos = findAllTodos();
 
         self::assertCount(1, $todos);
         self::assertSame('見積書を作成する', $todos[0]['title']);
-        self::assertSame('仕事', $todos[0]['category_name']);
+        self::assertSame('仕事', $todos[0]['tag_names']);
         self::assertSame(0, (int) $todos[0]['is_completed']);
     }
 
     public function testUpdatesATodo(): void
     {
-        createTodo('下書き', null);
+        createTodo('下書き', []);
         $todo = findAllTodos()[0];
 
-        createCategory('個人');
-        $category = findAllCategories()[0];
-        updateTodo((int) $todo['id'], '提出用の原稿を仕上げる', (int) $category['id']);
+        createTag('個人');
+        createTag('重要');
+        $tags = findAllTags();
+        updateTodo((int) $todo['id'], '提出用の原稿を仕上げる', array_column($tags, 'id'));
         toggleTodo((int) $todo['id']);
 
         $updatedTodo = findTodo((int) $todo['id']);
 
         self::assertNotNull($updatedTodo);
         self::assertSame('提出用の原稿を仕上げる', $updatedTodo['title']);
-        self::assertSame('個人', $updatedTodo['category_name']);
+        self::assertCount(2, $updatedTodo['tag_ids']);
         self::assertSame(1, (int) $updatedTodo['is_completed']);
     }
 
     public function testDeletesATodo(): void
     {
-        createTodo('削除するTODO', null);
+        createTodo('削除するTODO', []);
         $todo = findAllTodos()[0];
 
         deleteTodo((int) $todo['id']);

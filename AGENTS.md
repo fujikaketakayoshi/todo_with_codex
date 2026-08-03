@@ -26,7 +26,7 @@
 ## Frontend
 - Modern web best practicesを優先する
 - 必要に応じてCSSやWeb標準APIを活用する
-- Bootstrap 5の利用は必須ではない
+- CSSにはTailWindを用いること
 - 依存ライブラリは必要性を検討して追加する
 
 ## Rules

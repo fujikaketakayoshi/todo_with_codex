@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 const TODO_TITLE_MAXIMUM_LENGTH = 100;
-const CATEGORY_NAME_MAXIMUM_LENGTH = 30;
+const TAG_NAME_MAXIMUM_LENGTH = 30;
 
 function requireExistingTodo(): int
 {
@@ -13,11 +13,11 @@ function requireExistingTodo(): int
     return $id;
 }
 
-function requireExistingCategory(): int
+function requireExistingTag(): int
 {
     $id = requestPositiveInt('id', $_POST);
-    if ($id === null || findCategory($id) === null) {
-        redirect('対象のカテゴリが見つかりません。', returnFilterParameters(), 'error');
+    if ($id === null || findTag($id) === null) {
+        redirect('対象のタグが見つかりません。', returnFilterParameters(), 'error');
     }
     return $id;
 }
@@ -26,12 +26,12 @@ function handleTodoAction(string $action): never
 {
     $parameters = returnFilterParameters();
     if ($action === 'add_todo') {
-        createTodo(requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestCategoryId());
+        createTodo(requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestTagIds());
         redirect('TODOを追加しました。', $parameters);
     }
     $id = requireExistingTodo();
     if ($action === 'update_todo') {
-        updateTodo($id, requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestCategoryId());
+        updateTodo($id, requiredText('title', 'TODO', TODO_TITLE_MAXIMUM_LENGTH), requestTagIds());
         redirect('TODOを編集しました。', $parameters);
     }
     if ($action === 'toggle_todo') {
@@ -42,28 +42,28 @@ function handleTodoAction(string $action): never
     redirect('TODOを削除しました。', $parameters);
 }
 
-function handleCategoryAction(string $action): never
+function handleTagAction(string $action): never
 {
     $parameters = returnFilterParameters();
-    if ($action === 'add_category') {
+    if ($action === 'add_tag') {
         try {
-            createCategory(requiredText('name', 'カテゴリ名', CATEGORY_NAME_MAXIMUM_LENGTH));
-            redirect('カテゴリを作成しました。', $parameters);
+            createTag(requiredText('name', 'タグ名', TAG_NAME_MAXIMUM_LENGTH));
+            redirect('タグを作成しました。', $parameters);
         } catch (PDOException $exception) {
-            redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
+            redirect('同じ名前のタグがすでにあります。', $parameters, 'error');
         }
     }
-    $id = requireExistingCategory();
-    if ($action === 'update_category') {
+    $id = requireExistingTag();
+    if ($action === 'update_tag') {
         try {
-            updateCategory($id, requiredText('name', 'カテゴリ名', CATEGORY_NAME_MAXIMUM_LENGTH));
-            redirect('カテゴリを編集しました。', $parameters);
+            updateTag($id, requiredText('name', 'タグ名', TAG_NAME_MAXIMUM_LENGTH));
+            redirect('タグを編集しました。', $parameters);
         } catch (PDOException $exception) {
-            redirect('同じ名前のカテゴリがすでにあります。', $parameters, 'error');
+            redirect('同じ名前のタグがすでにあります。', $parameters, 'error');
         }
     }
-    deleteCategory($id);
-    redirect('カテゴリを削除しました。TODOのカテゴリ指定も解除されました。', $parameters);
+    deleteTag($id);
+    redirect('タグを削除しました。TODOとの関連付けも解除されました。', $parameters);
 }
 
 function handlePostAction(): never
@@ -73,8 +73,8 @@ function handlePostAction(): never
     if (in_array($action, ['add_todo', 'update_todo', 'toggle_todo', 'delete_todo'], true)) {
         handleTodoAction($action);
     }
-    if (in_array($action, ['add_category', 'update_category', 'delete_category'], true)) {
-        handleCategoryAction($action);
+    if (in_array($action, ['add_tag', 'update_tag', 'delete_tag'], true)) {
+        handleTagAction($action);
     }
     redirect();
 }

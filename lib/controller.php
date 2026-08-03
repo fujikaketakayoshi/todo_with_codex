@@ -42,15 +42,16 @@ function pullFlashMessage(): ?array
     ];
 }
 
-/** @return array{category?: string} */
+/** @return array{tag?: string} */
 function returnFilterParameters(): array
 {
-    $category = $_POST['return_category'] ?? '';
-    if ($category === 'none') {
-        return ['category' => 'none'];
+    $tag = $_POST['return_tag'] ?? '';
+    if ($tag === 'none') {
+        return ['tag' => 'none'];
     }
-    $categoryId = requestPositiveInt('return_category', $_POST);
-    return $categoryId === null ? [] : ['category' => (string) $categoryId];
+    $tagId = requestPositiveInt('return_tag', $_POST);
+
+    return $tagId === null ? [] : ['tag' => (string) $tagId];
 }
 
 function validateCsrf(): void
@@ -89,15 +90,22 @@ function isWithinMaximumLength(string $text, int $maximumLength): bool
     return mb_strlen($text) <= $maximumLength;
 }
 
-function requestCategoryId(): ?int
+/** @return list<int> */
+function requestTagIds(): array
 {
-    $value = $_POST['category_id'] ?? '';
-    if ($value === '') {
-        return null;
+    $values = $_POST['tag_ids'] ?? [];
+    if (!is_array($values)) {
+        redirect('選択したタグが見つかりません。', [], 'error');
     }
-    $id = requestPositiveInt('category_id', $_POST);
-    if ($id === null || findCategory($id) === null) {
-        redirect('選択したカテゴリが見つかりません。', [], 'error');
+
+    $tagIds = [];
+    foreach ($values as $value) {
+        $tagId = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!is_int($tagId) || findTag($tagId) === null) {
+            redirect('選択したタグが見つかりません。', [], 'error');
+        }
+        $tagIds[] = $tagId;
     }
-    return $id;
+
+    return array_values(array_unique($tagIds));
 }
