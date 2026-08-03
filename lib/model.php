@@ -127,7 +127,15 @@ function migrateTodoCategoryToTags(PDO $pdo): void
 }
 
 /** @return list<array{id: int, title: string, is_completed: int, tag_names: ?string, created_at: string}> */
-function findAllTodos(?int $tagId = null, bool $onlyUntagged = false): array
+/** @param list<int> $tagIds
+ *  @return list<array{id: int, title: string, is_completed: int, tag_names: ?string, created_at: string}> */
+function findAllTodos(
+    ?int $tagId = null,
+    bool $onlyUntagged = false,
+    string $query = '',
+    string $status = 'all',
+    array $tagIds = []
+): array
 {
     $sql = 'SELECT todos.id, todos.title, todos.is_completed,
                    GROUP_CONCAT(tags.name, \' • \') AS tag_names, todos.created_at
@@ -136,19 +144,44 @@ function findAllTodos(?int $tagId = null, bool $onlyUntagged = false): array
             LEFT JOIN tags ON tags.id = todo_tags.tag_id';
 
     if ($tagId !== null) {
-        $sql .= ' WHERE EXISTS (
-            SELECT 1 FROM todo_tags filtered_tags
-            WHERE filtered_tags.todo_id = todos.id AND filtered_tags.tag_id = :tag_id
-        )';
-    } elseif ($onlyUntagged) {
-        $sql .= ' WHERE NOT EXISTS (
+        $tagIds[] = $tagId;
+    }
+
+    $conditions = [];
+    $parameters = [];
+    if ($onlyUntagged) {
+        $conditions[] = 'NOT EXISTS (
             SELECT 1 FROM todo_tags assigned_tags WHERE assigned_tags.todo_id = todos.id
         )';
+    }
+    if ($query !== '') {
+        $conditions[] = "todos.title LIKE :query ESCAPE '\\'";
+        $parameters[':query'] = '%' . addcslashes($query, '\\%_') . '%';
+    }
+    if ($status === 'completed') {
+        $conditions[] = 'todos.is_completed = 1';
+    } elseif ($status === 'incomplete') {
+        $conditions[] = 'todos.is_completed = 0';
+    }
+
+    $tagIds = array_values(array_unique($tagIds));
+    if ($tagIds !== []) {
+        $placeholders = [];
+        foreach ($tagIds as $index => $selectedTagId) {
+            $placeholder = ':tag_' . $index;
+            $placeholders[] = $placeholder;
+            $parameters[$placeholder] = $selectedTagId;
+        }
+        $conditions[] = '(SELECT COUNT(DISTINCT filtered_tags.tag_id) FROM todo_tags filtered_tags
+            WHERE filtered_tags.todo_id = todos.id AND filtered_tags.tag_id IN (' . implode(', ', $placeholders) . ')) = ' . count($tagIds);
+    }
+    if ($conditions !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
     }
 
     $sql .= ' GROUP BY todos.id ORDER BY todos.is_completed ASC, todos.id DESC';
     $statement = todoDatabase()->prepare($sql);
-    $statement->execute($tagId === null ? [] : [':tag_id' => $tagId]);
+    $statement->execute($parameters);
 
     return $statement->fetchAll(PDO::FETCH_ASSOC);
 }

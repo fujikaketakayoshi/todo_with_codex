@@ -42,16 +42,28 @@ function pullFlashMessage(): ?array
     ];
 }
 
-/** @return array{tag?: string} */
+/** @return array{q?: string, status?: string, tags?: list<string>} */
 function returnFilterParameters(): array
 {
-    $tag = $_POST['return_tag'] ?? '';
-    if ($tag === 'none') {
-        return ['tag' => 'none'];
+    $parameters = [];
+    $query = $_POST['return_q'] ?? '';
+    if (is_string($query) && $query !== '') {
+        $parameters['q'] = $query;
     }
-    $tagId = requestPositiveInt('return_tag', $_POST);
+    $status = $_POST['return_status'] ?? 'all';
+    if (in_array($status, ['completed', 'incomplete'], true)) {
+        $parameters['status'] = $status;
+    }
+    $tagIds = $_POST['return_tags'] ?? [];
+    if (is_array($tagIds)) {
+        foreach ($tagIds as $tagId) {
+            if (filter_var($tagId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false) {
+                $parameters['tags'][] = (string) $tagId;
+            }
+        }
+    }
 
-    return $tagId === null ? [] : ['tag' => (string) $tagId];
+    return $parameters;
 }
 
 function validateCsrf(): void

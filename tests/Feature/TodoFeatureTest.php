@@ -51,4 +51,34 @@ final class TodoFeatureTest extends TestCase
         self::assertNull(findTodo((int) $todo['id']));
         self::assertSame([], findAllTodos());
     }
+
+    public function testSearchesTodosByTextStatusAndMultipleTags(): void
+    {
+        createTodo('牛乳を買い出しに行く', ['家事', '毎日']);
+        createTodo('週次報告を提出する', ['仕事']);
+        foreach (findAllTodos() as $todo) {
+            if ($todo['title'] === '週次報告を提出する') {
+                toggleTodo((int) $todo['id']);
+            }
+        }
+
+        $matchingTodos = findAllTodos(null, false, '買い出し', 'incomplete', $this->findTagIdsByNames(['家事', '毎日']));
+
+        self::assertCount(1, $matchingTodos);
+        self::assertSame('牛乳を買い出しに行く', $matchingTodos[0]['title']);
+        self::assertSame([], findAllTodos(null, false, '', 'completed', $this->findTagIdsByNames(['家事'])));
+    }
+
+    /** @param list<string> $tagNames
+     *  @return list<int> */
+    private function findTagIdsByNames(array $tagNames): array
+    {
+        return array_map(
+            static fn(string $tagName): int => (int) array_values(array_filter(
+                findAllTags(),
+                static fn(array $tag): bool => $tag['name'] === $tagName
+            ))[0]['id'],
+            $tagNames
+        );
+    }
 }

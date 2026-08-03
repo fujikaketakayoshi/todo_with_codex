@@ -12,12 +12,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $tags = findAllTags();
-$filter = $_GET['tag'] ?? '';
-$selectedTag = is_string($filter) ? requestPositiveInt('tag', $_GET) : null;
-$showUntagged = $filter === 'none';
-$selectedTagData = $selectedTag === null ? null : findTag($selectedTag);
-$selectedTag = $selectedTagData === null ? null : $selectedTag;
-$todos = findAllTodos($selectedTag, $showUntagged);
+$searchQuery = trim((string) ($_GET['q'] ?? ''));
+$searchStatus = $_GET['status'] ?? 'all';
+$searchStatus = in_array($searchStatus, ['all', 'completed', 'incomplete'], true) ? $searchStatus : 'all';
+$selectedTagIds = [];
+foreach (is_array($_GET['tags'] ?? null) ? $_GET['tags'] : [] as $tagId) {
+    $validTagId = filter_var($tagId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if (is_int($validTagId) && findTag($validTagId) !== null) {
+        $selectedTagIds[] = $validTagId;
+    }
+}
+$selectedTagIds = array_values(array_unique($selectedTagIds));
+$todos = findAllTodos(null, false, $searchQuery, $searchStatus, $selectedTagIds);
+$selectedTag = null;
+$showUntagged = false;
+$returnTag = '';
 $allTodos = findAllTodos();
 $todoSummary = [
     'total' => count($allTodos),
@@ -29,10 +38,7 @@ $editingTodo = ($id = requestPositiveInt('edit', $_GET)) === null ? null : findT
 $editingTodoInput = $editingTodo === null
     ? ''
     : $editingTodo['title'] . ($editingTodo['tag_names'] === null ? '' : ' #' . str_replace(' • ', ' #', $editingTodo['tag_names']));
-$returnTag = $showUntagged ? 'none' : ($selectedTag === null ? '' : (string) $selectedTag);
-$pageTitle = $showUntagged
-    ? 'タグなしのTODO'
-    : ($selectedTagData === null ? 'TODO リスト' : $selectedTagData['name'] . ' のTODO');
+$pageTitle = 'TODO リスト';
 
 renderHeader($pageTitle);
 require __DIR__ . '/views/index.php';
