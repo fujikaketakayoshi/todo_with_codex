@@ -11,6 +11,23 @@ function csrfInput(): string
     return '<input type="hidden" name="csrf_token" value="' . e($_SESSION['csrf_token']) . '">';
 }
 
+/** @param list<int> $tagIds */
+function paginationUrl(string $query, string $status, array $tagIds, int $page): string
+{
+    $parameters = ['page' => $page];
+    if ($query !== '') {
+        $parameters['q'] = $query;
+    }
+    if ($status !== 'all') {
+        $parameters['status'] = $status;
+    }
+    if ($tagIds !== []) {
+        $parameters['tags'] = $tagIds;
+    }
+
+    return 'index.php?' . http_build_query($parameters);
+}
+
 function renderHeader(string $title = 'TODO アプリ'): void
 {
     ?>

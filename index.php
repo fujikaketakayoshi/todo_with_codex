@@ -23,7 +23,14 @@ foreach (is_array($_GET['tags'] ?? null) ? $_GET['tags'] : [] as $tagId) {
     }
 }
 $selectedTagIds = array_values(array_unique($selectedTagIds));
-$todos = findAllTodos(null, false, $searchQuery, $searchStatus, $selectedTagIds);
+$perPage = 20;
+$totalTodos = countTodos($searchQuery, $searchStatus, $selectedTagIds);
+$totalPages = max(1, (int) ceil($totalTodos / $perPage));
+$page = requestPositiveInt('page', $_GET) ?? 1;
+$page = min($page, $totalPages);
+$todos = findAllTodos(null, false, $searchQuery, $searchStatus, $selectedTagIds, $perPage, ($page - 1) * $perPage);
+$firstTodoNumber = $totalTodos === 0 ? 0 : (($page - 1) * $perPage) + 1;
+$lastTodoNumber = min($page * $perPage, $totalTodos);
 $selectedTag = null;
 $showUntagged = false;
 $returnTag = '';

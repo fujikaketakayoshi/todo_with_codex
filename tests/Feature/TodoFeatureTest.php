@@ -69,6 +69,20 @@ final class TodoFeatureTest extends TestCase
         self::assertSame([], findAllTodos(null, false, '', 'completed', $this->findTagIdsByNames(['家事'])));
     }
 
+    public function testPaginatesTodosAndCountsMatchingResults(): void
+    {
+        createTodo('ページ1', []);
+        createTodo('ページ2', []);
+        createTodo('ページ3', []);
+
+        $firstPage = findAllTodos(null, false, '', 'all', [], 2, 0);
+        $secondPage = findAllTodos(null, false, '', 'all', [], 2, 2);
+
+        self::assertSame(3, countTodos());
+        self::assertCount(2, $firstPage);
+        self::assertCount(1, $secondPage);
+    }
+
     /** @param list<string> $tagNames
      *  @return list<int> */
     private function findTagIdsByNames(array $tagNames): array

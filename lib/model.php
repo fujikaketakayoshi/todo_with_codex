@@ -134,7 +134,9 @@ function findAllTodos(
     bool $onlyUntagged = false,
     string $query = '',
     string $status = 'all',
-    array $tagIds = []
+    array $tagIds = [],
+    int $limit = 0,
+    int $offset = 0
 ): array
 {
     $sql = 'SELECT todos.id, todos.title, todos.is_completed,
@@ -180,10 +182,24 @@ function findAllTodos(
     }
 
     $sql .= ' GROUP BY todos.id ORDER BY todos.is_completed ASC, todos.id DESC';
+    if ($limit > 0) {
+        $sql .= ' LIMIT :limit OFFSET :offset';
+        $parameters[':limit'] = $limit;
+        $parameters[':offset'] = $offset;
+    }
     $statement = todoDatabase()->prepare($sql);
-    $statement->execute($parameters);
+    foreach ($parameters as $name => $value) {
+        $statement->bindValue($name, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+    }
+    $statement->execute();
 
     return $statement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/** @param list<int> $tagIds */
+function countTodos(string $query = '', string $status = 'all', array $tagIds = []): int
+{
+    return count(findAllTodos(null, false, $query, $status, $tagIds));
 }
 
 /** @return array{id: int, title: string, is_completed: int, tag_names: ?string, tag_ids: list<int>, created_at: string}|null */
