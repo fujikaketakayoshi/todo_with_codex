@@ -186,8 +186,8 @@ function findTagIdsForTodo(int $todoId): array
     return array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
 }
 
-/** @param list<int> $tagIds */
-function createTodo(string $title, array $tagIds): void
+/** @param list<string> $tagNames */
+function createTodo(string $title, array $tagNames): void
 {
     $pdo = todoDatabase();
     $pdo->beginTransaction();
@@ -195,7 +195,7 @@ function createTodo(string $title, array $tagIds): void
     try {
         $statement = $pdo->prepare('INSERT INTO todos (title) VALUES (:title)');
         $statement->execute([':title' => $title]);
-        replaceTodoTags($pdo, (int) $pdo->lastInsertId(), $tagIds);
+        replaceTodoTags($pdo, (int) $pdo->lastInsertId(), findOrCreateTagIds($pdo, $tagNames));
         $pdo->commit();
     } catch (Throwable $exception) {
         $pdo->rollBack();
@@ -203,8 +203,8 @@ function createTodo(string $title, array $tagIds): void
     }
 }
 
-/** @param list<int> $tagIds */
-function updateTodo(int $id, string $title, array $tagIds): void
+/** @param list<string> $tagNames */
+function updateTodo(int $id, string $title, array $tagNames): void
 {
     $pdo = todoDatabase();
     $pdo->beginTransaction();
@@ -212,12 +212,33 @@ function updateTodo(int $id, string $title, array $tagIds): void
     try {
         $statement = $pdo->prepare('UPDATE todos SET title = :title WHERE id = :id');
         $statement->execute([':id' => $id, ':title' => $title]);
-        replaceTodoTags($pdo, $id, $tagIds);
+        replaceTodoTags($pdo, $id, findOrCreateTagIds($pdo, $tagNames));
         $pdo->commit();
     } catch (Throwable $exception) {
         $pdo->rollBack();
         throw $exception;
     }
+}
+
+/** @param list<string> $tagNames
+ *  @return list<int> */
+function findOrCreateTagIds(PDO $pdo, array $tagNames): array
+{
+    $tagIds = [];
+    $findStatement = $pdo->prepare('SELECT id FROM tags WHERE name = :name');
+    $createStatement = $pdo->prepare('INSERT INTO tags (name) VALUES (:name)');
+
+    foreach (array_unique($tagNames) as $tagName) {
+        $findStatement->execute([':name' => $tagName]);
+        $tagId = $findStatement->fetchColumn();
+        if ($tagId === false) {
+            $createStatement->execute([':name' => $tagName]);
+            $tagId = $pdo->lastInsertId();
+        }
+        $tagIds[] = (int) $tagId;
+    }
+
+    return $tagIds;
 }
 
 /** @param list<int> $tagIds */
@@ -258,22 +279,4 @@ function findTag(int $id): ?array
     $tag = $statement->fetch(PDO::FETCH_ASSOC);
 
     return $tag === false ? null : $tag;
-}
-
-function createTag(string $name): void
-{
-    $statement = todoDatabase()->prepare('INSERT INTO tags (name) VALUES (:name)');
-    $statement->execute([':name' => $name]);
-}
-
-function updateTag(int $id, string $name): void
-{
-    $statement = todoDatabase()->prepare('UPDATE tags SET name = :name WHERE id = :id');
-    $statement->execute([':id' => $id, ':name' => $name]);
-}
-
-function deleteTag(int $id): void
-{
-    $statement = todoDatabase()->prepare('DELETE FROM tags WHERE id = :id');
-    $statement->execute([':id' => $id]);
 }

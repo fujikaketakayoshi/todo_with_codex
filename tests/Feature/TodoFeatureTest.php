@@ -15,10 +15,7 @@ final class TodoFeatureTest extends TestCase
 
     public function testCreatesAndRetrievesATodo(): void
     {
-        createTag('仕事');
-        $tag = findAllTags()[0];
-
-        createTodo('見積書を作成する', [(int) $tag['id']]);
+        createTodo('見積書を作成する', ['仕事']);
 
         $todos = findAllTodos();
 
@@ -33,10 +30,7 @@ final class TodoFeatureTest extends TestCase
         createTodo('下書き', []);
         $todo = findAllTodos()[0];
 
-        createTag('個人');
-        createTag('重要');
-        $tags = findAllTags();
-        updateTodo((int) $todo['id'], '提出用の原稿を仕上げる', array_column($tags, 'id'));
+        updateTodo((int) $todo['id'], '提出用の原稿を仕上げる', ['個人', '重要']);
         toggleTodo((int) $todo['id']);
 
         $updatedTodo = findTodo((int) $todo['id']);

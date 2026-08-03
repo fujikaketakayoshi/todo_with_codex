@@ -26,7 +26,9 @@ $todoSummary = [
 ];
 $message = pullFlashMessage();
 $editingTodo = ($id = requestPositiveInt('edit', $_GET)) === null ? null : findTodo($id);
-$editingTag = ($id = requestPositiveInt('edit_tag', $_GET)) === null ? null : findTag($id);
+$editingTodoInput = $editingTodo === null
+    ? ''
+    : $editingTodo['title'] . ($editingTodo['tag_names'] === null ? '' : ' #' . str_replace(' • ', ' #', $editingTodo['tag_names']));
 $returnTag = $showUntagged ? 'none' : ($selectedTag === null ? '' : (string) $selectedTag);
 $pageTitle = $showUntagged
     ? 'タグなしのTODO'

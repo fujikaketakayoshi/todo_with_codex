@@ -89,23 +89,3 @@ function isWithinMaximumLength(string $text, int $maximumLength): bool
 {
     return mb_strlen($text) <= $maximumLength;
 }
-
-/** @return list<int> */
-function requestTagIds(): array
-{
-    $values = $_POST['tag_ids'] ?? [];
-    if (!is_array($values)) {
-        redirect('選択したタグが見つかりません。', [], 'error');
-    }
-
-    $tagIds = [];
-    foreach ($values as $value) {
-        $tagId = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if (!is_int($tagId) || findTag($tagId) === null) {
-            redirect('選択したタグが見つかりません。', [], 'error');
-        }
-        $tagIds[] = $tagId;
-    }
-
-    return array_values(array_unique($tagIds));
-}
